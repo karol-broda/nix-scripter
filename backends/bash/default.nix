@@ -2,6 +2,8 @@
 let
   inherit (lib) concatStringsSep optional optionalString;
   q = lib.escapeShellArg;
+  # always quoted, so values like `a-b` are never read as arithmetic (SC2100)
+  sq = s: "'" + lib.replaceStrings [ "'" ] [ "'\\''" ] s + "'";
 
   caps32 = [
     "indexed-arrays"
@@ -182,9 +184,9 @@ in
           pathLine
           commandCheck
           envLines
-          "__scripter_name=${q config.name}"
-          "__scripter_version=${q config.version}"
-          "__scripter_target=${q cfg.target}"
+          "__scripter_name=${sq config.name}"
+          "__scripter_version=${sq config.version}"
+          "__scripter_target=${sq cfg.target}"
         ]
       );
 

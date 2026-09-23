@@ -18,8 +18,9 @@ let
     text = ''
       #!${backend.checkInterpreter pkgs}
       set -euo pipefail
-      __scripter_name=${q name}
-      __scripter_version=${q config.version}
+      __scripter_name='${name}'
+      __scripter_version='${config.version}'
+
       ${argsCode.parser}
       __scripter_args_parse_root "$@"
       ${argsCode.dump}

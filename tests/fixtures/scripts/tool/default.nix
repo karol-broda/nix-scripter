@@ -1,0 +1,1 @@
+{ description = "A directory script"; }

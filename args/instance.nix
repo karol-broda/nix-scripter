@@ -30,7 +30,12 @@ let
     (lib.evalModules {
       modules = [
         (import ./types.nix { inherit lib; }).root
-        (load spec)
+        (
+          let
+            loaded = load spec;
+          in
+          if lib.isFunction loaded then loaded else { config = loaded; }
+        )
       ];
     }).config;
 

@@ -1,0 +1,6 @@
+[options.greeting]
+default = "hello"
+description = "Greeting to use"
+
+[flags.loud]
+short = "l"

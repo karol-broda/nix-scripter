@@ -511,23 +511,16 @@ __scripter_ui_prefix() {
   done
 }
 
-# ui::group <title> -- <cmd>…  (the command runs in a subshell)
+# ui::group <title> -- <cmd>…  the command runs in a subshell with errexit;
+# its stdout and stderr are left untouched.
 ui::group() {
   local __scripter_title=$1
   shift
   if [ "${1:-}" = -- ]; then shift; fi
   ui::group_begin "$__scripter_title"
-  if [ "$__scripter_ui_renderer" = fancy ]; then
-    __scripter_ui_run __scripter_ui_group_fancy "$@"
-  else
-    __scripter_ui_run "$@"
-  fi
+  __scripter_ui_run "$@"
   ui::group_end
   return "$__scripter_ui_rc"
-}
-
-__scripter_ui_group_fancy() {
-  "$@" 2>&1 | __scripter_ui_prefix >&2
 }
 
 # ui::annotate <notice|warning|error> <message> [file] [line]
