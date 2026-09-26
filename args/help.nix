@@ -1,5 +1,3 @@
-# Renders `--help` text for one level of the IR. Plain text, generated at
-# build time; backends only print it.
 { lib }:
 let
   inherit (lib)
@@ -10,67 +8,75 @@ let
     optionalString
     stringLength
     ;
+  inherit (import ../lib/util.nix { inherit lib; }) padRight;
+  argument = import ./ir/argument.nix { inherit lib; };
 
-  pad = n: s: s + lib.concatStrings (lib.genList (_: " ") (n - stringLength s));
-
-  maxCol = 32;
+  maxLeftColumn = 32;
 
   table =
     rows:
     let
-      width = lib.foldl' lib.max 0 (map (r: stringLength r.left) rows);
-      col = lib.min maxCol width;
+      widest = lib.foldl' lib.max 0 (map (r: stringLength r.left) rows);
+      column = lib.min maxLeftColumn widest;
+      row =
+        r:
+        if r.right == "" then
+          "  ${r.left}"
+        else if stringLength r.left > column then
+          "  ${r.left}\n  ${padRight column ""}  ${r.right}"
+        else
+          "  ${padRight column r.left}  ${r.right}";
     in
-    concatMapStringsSep "\n" (
-      r:
-      if r.right == "" then
-        "  ${r.left}"
-      else if stringLength r.left > col then
-        "  ${r.left}\n  ${pad col ""}  ${r.right}"
-      else
-        "  ${pad col r.left}  ${r.right}"
-    ) rows;
+    concatMapStringsSep "\n" row rows;
+
+  section = title: body: optionalString (body != "") "\n${title}:\n${body}\n";
+
+  showDefault = d: if lib.isList d then concatStringsSep ", " d else d;
 
   annotations =
     a:
-    concatStringsSep " " (
-      optional (
-        a.values or null != null && a.kind != "flag"
-      ) "[possible values: ${concatStringsSep ", " a.values}]"
-      ++ optional (a.default or null != null && a.kind != "flag") (
-        "[default: ${if lib.isList a.default then concatStringsSep ", " a.default else a.default}]"
-      )
-      ++ optional (a.env or null != null) "[env: ${a.env}]"
-      ++ optional (a.required or false) "[required]"
-    );
+    optional (
+      a.values != null && a.kind != "flag"
+    ) "[possible values: ${concatStringsSep ", " a.values}]"
+    ++ optional (a.default != null && a.kind != "flag") "[default: ${showDefault a.default}]"
+    ++ optional (a.env != null) "[env: ${a.env}]"
+    ++ optional a.required "[required]";
 
-  describe =
+  describe = a: concatStringsSep " " (filter (s: s != "") ([ a.description ] ++ annotations a));
+
+  optionLabel =
     a:
     let
-      ann = annotations a;
+      short = if a.short != null then "-${a.short}, " else "    ";
+      negation = optionalString (a.kind == "flag" && a.negatable) "/--no-${a.long}";
+      value = optionalString (argument.takesValue a) (
+        " <${a.metavar}>" + optionalString a.repeated "..."
+      );
     in
-    concatStringsSep " " (
-      filter (s: s != "") [
-        a.description
-        ann
-      ]
-    );
+    "${short}--${a.long}${negation}${value}";
 
-  argLeft =
-    a:
-    let
-      short = if a.short or null != null then "-${a.short}, " else "    ";
-      value = if a.kind == "option" then " <${a.metavar}>" + optionalString a.repeated "..." else "";
-      neg = optionalString (a.kind == "flag" && a.negatable) "/--no-${a.long}";
-    in
-    "${short}--${a.long}${neg}${value}";
-
-  posLeft =
+  positionalLabel =
     p:
     if p.optional || p.variadic then
       "[${p.metavar}]${optionalString p.variadic "..."}"
     else
       "<${p.metavar}>";
+
+  optionRows = map (a: {
+    left = optionLabel a;
+    right = describe a;
+  });
+
+  positionalRows = map (p: {
+    left = positionalLabel p;
+    right = describe p;
+  });
+
+  commandRows = map (c: {
+    left = c.name;
+    right =
+      c.description + optionalString (c.aliases != [ ]) " [aliases: ${concatStringsSep ", " c.aliases}]";
+  });
 
   builtinRows =
     ir: level:
@@ -78,77 +84,61 @@ let
       left = "-h, --help";
       right = "Print help";
     }
-    ++ optional (ir.globals.version && level.path == [ ]) {
+    ++ optional (ir.globals.version && level.isRoot) {
       left = "    --version";
       right = "Print version";
     };
 
-  section = title: body: optionalString (body != "") "\n${title}:\n${body}\n";
+  visible = filter (a: !a.hidden);
+  userFirst = args: filter (a: !argument.isGlobal a) args ++ filter argument.isGlobal args;
+
+  usageLine =
+    ir: level:
+    let
+      positionals = concatMapStringsSep " " positionalLabel (visible level.positional);
+      hasOptions = level.flags ++ level.options ++ level.inherited != [ ] || ir.globals.help;
+    in
+    "Usage: ${level.display}"
+    + optionalString hasOptions " [OPTIONS]"
+    + optionalString (level.commands != [ ]) " <COMMAND>"
+    + optionalString (positionals != "") " ${positionals}";
+
+  heading =
+    ir: level:
+    if level.isRoot then
+      "${ir.name} ${ir.version}\n" + optionalString (ir.description != "") "${ir.description}\n" + "\n"
+    else
+      optionalString (level.description != "") "${level.description}\n\n";
+
+  exampleLines = concatMapStringsSep "\n" (
+    e: "  ${e.cmd}" + optionalString (e.description != "") "\n      ${e.description}"
+  );
+
+  groupSections =
+    level: own:
+    lib.concatStrings (
+      lib.mapAttrsToList (
+        title: names: section title (table (optionRows (filter (a: lib.elem a.name names) own)))
+      ) level.groups
+    );
 
   render =
     ir: level:
     let
-      visible = filter (a: !a.hidden);
-      # user arguments first, then the library's global flags
-      own =
-        let
-          all = visible (level.flags ++ level.options);
-        in
-        filter (a: a.action == null) all ++ filter (a: a.action != null) all;
-      inherited = visible level.inherited;
+      own = userFirst (visible (level.flags ++ level.options));
       grouped = lib.concatLists (lib.attrValues level.groups);
       ungrouped = filter (a: !lib.elem a.name grouped) own;
-      positional = visible level.positional;
-      commands = filter (c: !c.hidden) level.commands;
-      usagePositional = concatMapStringsSep " " posLeft positional;
-      usage =
-        "Usage: ${level.display}"
-        + optionalString (own != [ ] || inherited != [ ] || ir.globals.help) " [OPTIONS]"
-        + optionalString (commands != [ ]) " <COMMAND>"
-        + optionalString (usagePositional != "") " ${usagePositional}";
-      rows = map (a: {
-        left = argLeft a;
-        right = describe a;
-      });
-      groupSections = lib.concatStrings (
-        lib.mapAttrsToList (
-          title: names: section title (table (rows (filter (a: lib.elem a.name names) own)))
-        ) level.groups
-      );
-      description = optionalString (level.description != "") "${level.description}\n\n";
-      header = optionalString (level.path == [ ]) (
-        "${ir.name} ${ir.version}\n" + optionalString (ir.description != "") "${ir.description}\n" + "\n"
-      );
     in
     lib.removeSuffix "\n" (
-      (if level.path == [ ] then header else description)
-      + usage
+      heading ir level
+      + usageLine ir level
       + "\n"
-      + section "Commands" (
-        table (
-          map (c: {
-            left = c.name;
-            right =
-              c.description + optionalString (c.aliases != [ ]) " [aliases: ${concatStringsSep ", " c.aliases}]";
-          }) commands
-        )
-      )
-      + section "Arguments" (
-        table (
-          map (p: {
-            left = posLeft p;
-            right = describe p;
-          }) positional
-        )
-      )
-      + section "Options" (table (rows ungrouped ++ builtinRows ir level))
-      + groupSections
-      + section "Global options" (table (rows inherited))
-      + section "Examples" (
-        concatMapStringsSep "\n" (
-          e: "  ${e.cmd}" + optionalString (e.description != "") "\n      ${e.description}"
-        ) level.examples
-      )
+      + section "Commands" (table (commandRows (filter (c: !c.hidden) level.commands)))
+      + section "Arguments" (table (positionalRows (visible level.positional)))
+      + section "Options" (table (optionRows ungrouped ++ builtinRows ir level))
+      + groupSections level own
+      + section "Global options" (table (optionRows (visible level.inherited)))
+      + section "Examples" (exampleLines level.examples)
     );
 in
 {
