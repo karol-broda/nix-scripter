@@ -1,9 +1,5 @@
-# The registry holds everything scripts are built from: backends (languages),
-# features (runtime libraries), checkers and presets. It is a fixpoint that
-# can be extended with overlays of the form `final: prev: { features.x = …; }`.
-#
 # Unlike `lib.makeExtensible`, categories are merged one level deep, so an
-# extension can add `features.git` without restating every other feature.
+# extension `final: prev: { features.git = …; }` keeps every other feature.
 { lib }:
 let
   categories = [
@@ -41,7 +37,7 @@ let
       ui = import ../features/ui { inherit lib; };
     };
 
-    checkers = import ./checkers.nix { inherit lib; };
+    checkers = import ./checkers { inherit lib; };
 
     presets = import ../presets { inherit lib; };
   };

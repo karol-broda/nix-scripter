@@ -1,4 +1,3 @@
-# A scripter instance: a registry bound to a package set plus default modules.
 {
   lib,
   pkgs,
@@ -14,7 +13,7 @@ let
         module:
         lib.evalModules {
           class = "scripter";
-          modules = [ (import ./script.nix { inherit registry; }) ] ++ defaultModules ++ [ module ];
+          modules = [ (import ./script { inherit registry; }) ] ++ defaultModules ++ [ module ];
           specialArgs = {
             inherit pkgs;
             scripter = self;
@@ -26,7 +25,7 @@ let
         let
           evaluated = evalScript module;
         in
-        import ./build.nix {
+        import ./pipeline {
           inherit lib pkgs registry;
           inherit (evaluated) config;
           extend =
@@ -39,7 +38,6 @@ let
             };
         };
 
-      # `scripter.bash { … }`, `scripter.zsh { … }`, … for every registered backend.
       shorthands = lib.mapAttrs (
         lang: _: module:
         mkScript {
