@@ -1,4 +1,7 @@
 { lib }:
+let
+  inherit (import ../../lib/util.nix { inherit lib; }) readFiles;
+in
 {
   description = "Errors, exit handlers, temporary directories and dry-run aware command execution.";
   namespace = "core";
@@ -40,7 +43,11 @@
   impl.bash =
     { cfg, ... }:
     ''
-      __scripter_core_stacktrace=${if cfg.stacktrace then "1" else "''"}
+      __scripter_core_stacktrace=${if cfg.stacktrace then "1" else "\"\""}
     ''
-    + builtins.readFile ./core.bash;
+    + readFiles [
+      ./exit.bash
+      ./commands.bash
+      ./errors.bash
+    ];
 }

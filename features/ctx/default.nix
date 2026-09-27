@@ -1,6 +1,9 @@
 { lib }:
+let
+  inherit (import ../../lib/util.nix { inherit lib; }) readFiles;
+in
 {
-  description = "Environment detection: CI provider, TTY, colors, OS, privileges of the session.";
+  description = "Environment detection: CI provider, terminal, colors and platform.";
   namespace = "ctx";
   requires = [ "core" ];
 
@@ -26,5 +29,13 @@
     };
   };
 
-  impl.bash = _: builtins.readFile ./ctx.bash;
+  impl.bash =
+    _:
+    readFiles [
+      ./return.bash
+      ./ci.bash
+      ./terminal.bash
+      ./platform.bash
+      ./info.bash
+    ];
 }

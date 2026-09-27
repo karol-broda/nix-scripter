@@ -21,6 +21,7 @@ let
     "bright-cyan"
   ];
   q = lib.escapeShellArg;
+  inherit (import ../../lib/util.nix { inherit lib; }) readFiles;
 in
 {
   description = "Messages, prompts, groups, tables and spinners that render correctly for terminals, pipes and CI.";
@@ -109,7 +110,7 @@ in
         "mktemp"
         "sleep"
         "rm"
-        "cat"
+        "sed"
       ];
     };
     progress = {
@@ -137,5 +138,17 @@ in
         )
       )}
     ''
-    + builtins.readFile ./ui.bash;
+    + readFiles [
+      ./style.bash
+      ./ci.bash
+      ./messages.bash
+      ./layout.bash
+      ./table.bash
+      ./prompts.bash
+      ./choose.bash
+      ./groups.bash
+      ./timing.bash
+      ./spin.bash
+      ./progress.bash
+    ];
 }
