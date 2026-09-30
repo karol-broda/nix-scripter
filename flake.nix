@@ -27,7 +27,7 @@
         scripter = scripterLib.mkScripter { pkgs = final; };
       };
 
-      flakeModules.default = import ./flake-module.nix { inherit scripterLib; };
+      flakeModules.default = import ./flake-module { inherit scripterLib; };
 
       legacyPackages = forAllSystems (pkgs: {
         scripter = scripterLib.mkScripter { inherit pkgs; };
