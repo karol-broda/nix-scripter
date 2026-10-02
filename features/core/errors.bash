@@ -18,14 +18,23 @@ core::stacktrace() {
   done
 }
 
+# Inside a function, bash 3 reports the definition line instead of the failing one.
+__scripter_line_note() {
+  __scripter_note=""
+  if [ "${BASH_VERSINFO[0]}" -lt 4 ] && [ -n "${1:-}" ] && [ "$1" != main ]; then
+    __scripter_note=", function start"
+  fi
+}
+
 __scripter_on_err() {
-  local __scripter_rc=$1 __scripter_line=$2 __scripter_cmd=$3
+  local __scripter_rc=$1 __scripter_cmd=$3
   if [ "${BASH_SUBSHELL:-0}" -gt 0 ]; then
     return 0
   fi
-  __scripter_location "$__scripter_line"
-  printf '%s: error: command failed with exit code %s\n    %s\n    at %s (%s)\n' \
-    "$__scripter_name" "$__scripter_rc" "$__scripter_cmd" "${FUNCNAME[1]:-main}" "$__scripter_loc" >&2
+  __scripter_location "$2"
+  __scripter_line_note "${FUNCNAME[1]:-}"
+  printf '%s: error: command failed with exit code %s\n    %s\n    at %s (%s%s)\n' \
+    "$__scripter_name" "$__scripter_rc" "$__scripter_cmd" "${FUNCNAME[1]:-main}" "$__scripter_loc" "$__scripter_note" >&2
   local __scripter_callers_of_failing_function=3
   core::stacktrace "$__scripter_callers_of_failing_function"
 }
