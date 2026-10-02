@@ -1,6 +1,6 @@
 inner() {
   echo "about to fail" >&2
-  (exit 3)
+  false
 }
 outer() {
   on_exit 'echo "cleanup ran" >&2'

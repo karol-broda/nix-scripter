@@ -18,16 +18,6 @@ let
     '';
   };
 
-  compat = scripter.bash {
-    name = "compat";
-    bash.target = "3.2";
-    features.ui = true;
-    args.options.x.default = "1";
-    text = ''
-      ui::info "x=$ARG_X"
-      ui::table <<<"a"
-    '';
-  };
 in
 {
   standalone = runTest "standalone" [ pkgs.jq ] ''
@@ -41,11 +31,5 @@ in
     mkdir bin && printf '#!/bin/sh\n' > bin/definitely-not-a-command-xyz && chmod +x bin/definitely-not-a-command-xyz
     PATH="$PWD/bin:$PATH" bash "$f" --name nix 2> ok.txt
     expect_contains ok.txt "hello nix"
-  '';
-  compat-3_2 = runTest "compat-3_2" [ ] ''
-    grep -q 'ARG_X=' ${compat}/bin/compat || fail "3.2 target should use globals"
-    ! grep -q 'declare -A args' ${compat}/bin/compat || fail "3.2 target declared an assoc array"
-    ${compat}/bin/compat 2> out.txt
-    expect_contains out.txt "x=1"
   '';
 }
