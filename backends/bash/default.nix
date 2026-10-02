@@ -19,7 +19,7 @@ in
   argsStyle = target: if lib.elem "assoc-arrays" targets.${target}.caps then "assoc" else "globals";
   argsCodegen = (import ./args { inherit lib; }).codegen;
 
-  checkInterpreter = pkgs: "${pkgs.bash}/bin/bash";
+  testInterpreter = config: "${config.bash.testPackage}/bin/bash";
 
   inherit (import ./assemble.nix { inherit lib targets; }) assemble;
 }

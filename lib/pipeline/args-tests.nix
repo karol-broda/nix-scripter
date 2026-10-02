@@ -15,7 +15,7 @@ let
     name = "${name}-args-harness";
     executable = true;
     text = ''
-      #!${backend.checkInterpreter pkgs}
+      #!${backend.testInterpreter config}
       set -euo pipefail
       __scripter_name=${util.shellQuote name}
       __scripter_version=${util.shellQuote config.version}

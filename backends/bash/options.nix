@@ -32,5 +32,14 @@
       type = lib.types.str;
       default = "/usr/bin/env bash";
     };
+    testPackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.bash;
+      defaultText = lib.literalExpression "pkgs.bash";
+      description = ''
+        Interpreter for the syntax check and argument tests. Point it at a
+        bash matching `target` to test compatibility for real.
+      '';
+    };
   };
 }
