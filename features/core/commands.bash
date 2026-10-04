@@ -50,7 +50,7 @@ __scripter_show_cmd() {
 
 run() {
   if is_true "${SCRIPTER_DRY_RUN:-}"; then
-    __scripter_show_cmd '[dry-run]' "$@"
+    __scripter_show_cmd 'would run:' "$@"
     return 0
   fi
   if [ "${SCRIPTER_LOG_LEVEL:-info}" = debug ]; then
