@@ -1,0 +1,12 @@
+[options.greeting]
+default = "Hello"
+description = "Greeting to use"
+
+[options.name]
+short = "n"
+default = "world"
+
+[options.times]
+short = "t"
+type = "int"
+default = 1
