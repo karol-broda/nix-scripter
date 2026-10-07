@@ -215,6 +215,7 @@ in
       }'';
 
   helpFunction = text: level: ''
+    # shellcheck disable=SC2016
     ${names.help level}() {
       printf '%s\n' ${q text}
     }'';
