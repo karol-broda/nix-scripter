@@ -16,8 +16,8 @@ let
   table =
     rows:
     let
-      widest = lib.foldl' lib.max 0 (map (r: stringLength r.left) rows);
-      column = lib.min maxLeftColumn widest;
+      fitting = filter (w: w <= maxLeftColumn) (map (r: stringLength r.left) rows);
+      column = lib.foldl' lib.max 0 fitting;
       row =
         r:
         if r.right == "" then
@@ -137,7 +137,7 @@ let
       + section "Arguments" (table (positionalRows (visible level.positional)))
       + section "Options" (table (optionRows ungrouped ++ builtinRows ir level))
       + groupSections level own
-      + section "Global options" (table (optionRows (visible level.inherited)))
+      + section "Global options" (table (optionRows (userFirst (visible level.inherited))))
       + section "Examples" (exampleLines level.examples)
     );
 in
