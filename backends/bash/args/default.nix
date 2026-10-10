@@ -4,7 +4,8 @@
 let
   help = import ../../../args/help.nix { inherit lib; };
   levels = import ../../../args/ir/levels.nix { inherit lib; };
-  inherit (import ../../../lib/util.nix { inherit lib; }) joinLines;
+  argument = import ../../../args/ir/argument.nix { inherit lib; };
+  inherit (import ../../../lib/util.nix { inherit lib; }) joinLines readFiles;
   inherit (import ./setters.nix { inherit lib; }) setterFunction;
   inherit (import ./tables.nix { inherit lib; }) tablesFor;
   inherit (import ./parse.nix { inherit lib; }) parseFunction helpFunction;
@@ -33,6 +34,31 @@ let
       inherit nameOf;
       code = joinLines (map sectionFunction texts);
     };
+
+  # Only the runtime pieces this parser can reach are included.
+  runtimeFiles =
+    ir: allLevels:
+    let
+      arguments = lib.concatMap levels.ownArguments allLevels;
+      anyArgument = pred: lib.any pred arguments;
+      anyLevel = pred: lib.any pred allLevels;
+      piece = name: ./runtime + "/${name}.bash";
+    in
+    map piece (
+      [
+        "errors"
+        "values"
+        "parse"
+      ]
+      ++ lib.optional (anyArgument (a: a.values != null)) "enum"
+      ++ lib.optional ir.hasCommands "commands"
+      ++ lib.optional (anyLevel (l: !l.isRoot && l.commands == [ ] && l.body == null)) "implementation"
+      ++ lib.optional (anyArgument (a: a.env != null)) "env"
+      ++ lib.optional (anyArgument (a: a.default != null && a.default != false)) "defaults"
+      ++ lib.optional (anyArgument (a: a.required)) "required"
+      ++ lib.optional (anyLevel (l: l.constraints != [ ])) "constraints"
+      ++ lib.optional (anyArgument argument.isGlobal) "globals"
+    );
 
   setters =
     level: map (setterFunction level) (lib.filter (a: a.kind != "flag") (levels.ownArguments level));
@@ -65,7 +91,7 @@ in
     {
       parser = joinLines (
         lib.filter (s: s != "") [
-          (builtins.readFile ./runtime.bash)
+          (readFiles (runtimeFiles ir allLevels))
           sections.code
           (joinLines (map (levelCode ir allLevels sections) allLevels))
           (output.variables ir arguments)
