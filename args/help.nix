@@ -122,25 +122,34 @@ let
       ) level.groups
     );
 
-  render =
+  # Each part ends with a newline; together they are the full help text.
+  parts =
     ir: level:
     let
       own = userFirst (visible (level.flags ++ level.options));
       grouped = lib.concatLists (lib.attrValues level.groups);
       ungrouped = filter (a: !lib.elem a.name grouped) own;
     in
-    lib.removeSuffix "\n" (
-      heading ir level
-      + usageLine ir level
-      + "\n"
-      + section "Commands" (table (commandRows (filter (c: !c.hidden) level.commands)))
-      + section "Arguments" (table (positionalRows (visible level.positional)))
-      + section "Options" (table (optionRows ungrouped ++ builtinRows ir level))
-      + groupSections level own
-      + section "Global options" (table (optionRows (userFirst (visible level.inherited))))
-      + section "Examples" (exampleLines level.examples)
-    );
+    {
+      own =
+        heading ir level
+        + usageLine ir level
+        + "\n"
+        + section "Commands" (table (commandRows (filter (c: !c.hidden) level.commands)))
+        + section "Arguments" (table (positionalRows (visible level.positional)))
+        + section "Options" (table (optionRows ungrouped ++ builtinRows ir level))
+        + groupSections level own;
+      inherited = section "Global options" (table (optionRows (userFirst (visible level.inherited))));
+      examples = section "Examples" (exampleLines level.examples);
+    };
+
+  render =
+    ir: level:
+    let
+      p = parts ir level;
+    in
+    lib.removeSuffix "\n" (p.own + p.inherited + p.examples);
 in
 {
-  inherit render;
+  inherit parts render;
 }

@@ -4,7 +4,9 @@ let
   names = import ./names.nix { inherit lib; };
   naming = import ../../../args/ir/naming.nix { inherit lib; };
   argument = import ../../../args/ir/argument.nix { inherit lib; };
-  inherit (import ../../../lib/util.nix { inherit lib; }) joinLines;
+  inherit (import ../../../lib/util.nix { inherit lib; }) joinLines shellQuote;
+
+  chunksOf = n: xs: if xs == [ ] then [ ] else [ (lib.take n xs) ] ++ chunksOf n (lib.drop n xs);
 
   initial =
     a:
@@ -51,12 +53,15 @@ let
 in
 {
   variables =
-    vars: arguments:
+    ir: arguments:
     joinLines (
-      map initial arguments
-      ++ map (a: "${names.given a.key}=\"\"") arguments
-      ++ [ "__scripter_args_command=\"\"" ]
-      ++ lib.optional (vars.style == "assoc") "declare -A ${vars.name}=()"
+      map (chunk: lib.concatStringsSep " " chunk) (chunksOf 4 (map initial arguments))
+      ++ [
+        "__scripter_args_command=\"\" __scripter_args_cmd=${shellQuote ir.name}"
+        "__scripter_args_help_enabled=${if ir.globals.help then "1" else "\"\""}"
+        "__scripter_args_version_enabled=${if ir.globals.version then "1" else "\"\""}"
+      ]
+      ++ lib.optional (ir.vars.style == "assoc") "declare -A ${ir.vars.name}=()"
     );
 
   exportFunction = vars: arguments: ''
