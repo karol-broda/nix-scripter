@@ -6,23 +6,27 @@ let
   argument = import ../../../args/ir/argument.nix { inherit lib; };
   inherit (import ../../../lib/util.nix { inherit lib; }) joinLines shellQuote;
 
-  chunksOf = n: xs: if xs == [ ] then [ ] else [ (lib.take n xs) ] ++ chunksOf n (lib.drop n xs);
+  lists = lib.filter argument.isList;
+  scalars = lib.filter (a: !argument.isList a);
+  counters = lib.filter (a: a.kind == "flag" && a.count);
 
-  initial =
-    a:
-    if argument.isList a then
-      "${names.list a.key}=()"
-    else
-      "${names.value a.key}=${if a.kind == "flag" && a.count then "0" else "\"\""}";
+  valueOrEmpty = a: "\"\${${names.value a.key}:-}\"";
 
-  exportLine =
-    vars: a:
-    if argument.isList a then
-      "${naming.listVariable vars a}=(${names.listRef a})"
-    else if vars.style == "assoc" then
-      "${vars.name}[${a.key}]=${names.valueRef a}"
+  listExport = vars: a: "${naming.listVariable vars a}=(${names.listRef a})";
+
+  scalarExports =
+    vars: arguments:
+    if vars.style == "assoc" then
+      [
+        ''
+          local __scripter_key __scripter_value
+          for __scripter_key in ${lib.concatMapStringsSep " " (a: a.key) arguments}; do
+            __scripter_value="__scripter_av_$__scripter_key"
+            ${vars.name}[$__scripter_key]=''${!__scripter_value:-}
+          done''
+      ]
     else
-      "${naming.globalVariable vars a}=${names.valueRef a}";
+      map (a: "${naming.globalVariable vars a}=${valueOrEmpty a}") arguments;
 
   commandExport =
     vars:
@@ -39,11 +43,11 @@ let
     if argument.isList a then
       "__scripter_json_list ${kind} ${names.listRef a}"
     else if a.kind == "flag" && !a.count then
-      "__scripter_json_flag ${names.valueRef a}"
+      "__scripter_json_flag ${valueOrEmpty a}"
     else if a.kind == "flag" then
-      "__scripter_json num ${names.valueRef a}"
+      "__scripter_json num ${valueOrEmpty a}"
     else
-      "__scripter_json ${kind} ${names.valueRef a}";
+      "__scripter_json ${kind} ${valueOrEmpty a}";
 
   dumpEntry = a: ''
     printf '%s:' ${q (builtins.toJSON a.key)}
@@ -55,7 +59,8 @@ in
   variables =
     ir: arguments:
     joinLines (
-      map (chunk: lib.concatStringsSep " " chunk) (chunksOf 4 (map initial arguments))
+      map (a: "${names.list a.key}=()") (lists arguments)
+      ++ map (a: "${names.value a.key}=0") (counters arguments)
       ++ [
         "__scripter_args_command=\"\" __scripter_args_cmd=${shellQuote ir.name}"
         "__scripter_args_help_enabled=${if ir.globals.help then "1" else "\"\""}"
@@ -67,7 +72,7 @@ in
   exportFunction = vars: arguments: ''
     # shellcheck disable=SC2034
     __scripter_args_export() {
-      ${joinLines (map (exportLine vars) arguments)}
+      ${joinLines (scalarExports vars (scalars arguments) ++ map (listExport vars) (lists arguments))}
       ${commandExport vars}
     }'';
 

@@ -20,7 +20,7 @@ let
       __scripter_name=${util.shellQuote name}
       __scripter_version=${util.shellQuote config.version}
       ${code.parser}
-      __scripter_args_parse_root "$@"
+      ${code.parse}
       ${code.dump}
     '';
   };

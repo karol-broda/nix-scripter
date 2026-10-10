@@ -8,32 +8,13 @@ let
   inherit (import ../../../lib/util.nix { inherit lib; }) joinLines readFiles;
   inherit (import ./setters.nix { inherit lib; }) setterFunction;
   inherit (import ./tables.nix { inherit lib; }) tablesFor;
-  inherit (import ./parse.nix { inherit lib; }) parseFunction helpFunction;
+  inherit (import ./parse.nix { inherit lib; }) levelDescriptor helpVariables sharedSection;
   inherit (import ./finish.nix { inherit lib; }) finishFunction;
   output = import ./output.nix { inherit lib; };
   commands = import ./dispatch.nix { inherit lib; };
 
   uniqueByKey =
     arguments: lib.attrValues (lib.listToAttrs (map (a: lib.nameValuePair a.key a) arguments));
-
-  # Subcommands that inherit the same options share one "Global options" section.
-  sharedHelpSections =
-    ir: allLevels:
-    let
-      texts = lib.unique (
-        lib.filter (t: t != "") (map (level: (help.parts ir level).inherited) allLevels)
-      );
-      indexOf = text: lib.lists.findFirstIndex (t: t == text) null texts;
-      nameOf = text: "__scripter_args_help_section_${toString (indexOf text)}";
-      sectionFunction = text: ''
-        ${nameOf text}() {
-          printf '%s' ${lib.escapeShellArg text}
-        }'';
-    in
-    {
-      inherit nameOf;
-      code = joinLines (map sectionFunction texts);
-    };
 
   # Only the runtime pieces this parser can reach are included.
   runtimeFiles =
@@ -60,21 +41,36 @@ let
       ++ lib.optional (anyArgument argument.isGlobal) "globals"
     );
 
+  # Subcommands that inherit the same options share one "Global options" section.
+  sharedHelpSections =
+    ir: allLevels:
+    let
+      texts = lib.unique (
+        lib.filter (t: t != "") (map (level: (help.parts ir level).inherited) allLevels)
+      );
+    in
+    {
+      indexOf = text: if text == "" then null else lib.lists.findFirstIndex (t: t == text) null texts;
+      code = joinLines (lib.imap0 sharedSection texts);
+    };
+
   setters =
     level: map (setterFunction level) (lib.filter (a: a.kind != "flag") (levels.ownArguments level));
 
   levelCode =
     ir: allLevels: sections: level:
+    let
+      parts = help.parts ir level;
+    in
     joinLines (
       lib.filter (s: s != "") (
-        [ (tablesFor level) ]
+        [
+          (levelDescriptor allLevels (sections.indexOf parts.inherited) level)
+          (tablesFor level)
+        ]
         ++ setters level
         ++ [
-          (helpFunction {
-            parts = help.parts ir level;
-            sharedSection = sections.nameOf;
-          } level)
-          (parseFunction allLevels level)
+          (helpVariables parts level)
           (finishFunction level)
         ]
       )
@@ -88,7 +84,7 @@ in
       arguments = uniqueByKey (lib.concatMap levels.ownArguments allLevels);
       sections = sharedHelpSections ir allLevels;
     in
-    {
+    rec {
       parser = joinLines (
         lib.filter (s: s != "") [
           (readFiles (runtimeFiles ir allLevels))
@@ -99,8 +95,10 @@ in
         ]
       );
 
+      parse = ''__scripter_args_parse root "$@"'';
+
       invoke = ''
-        __scripter_args_parse_root "$@"
+        ${parse}
         __scripter_args_export'';
 
       dispatch = commands.dispatch ir allLevels;

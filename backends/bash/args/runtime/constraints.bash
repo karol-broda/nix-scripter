@@ -1,23 +1,18 @@
-__scripter_args_count_given() {
-  local key
-  __scripter_args_n=0
+# __scripter_args_limit <le|eq> <shown list> <keys...>
+__scripter_args_limit() {
+  local op=$1 shown=$2 key given=0
+  shift 2
   for key in "$@"; do
-    if __scripter_args_is_given "$key"; then __scripter_args_n=$((__scripter_args_n + 1)); fi
+    if __scripter_args_is_given "$key"; then given=$((given + 1)); fi
   done
+  if [ "$op" = le ] && [ "$given" -gt 1 ]; then
+    __scripter_args_error "only one of $shown may be given"
+  fi
+  if [ "$op" = eq ] && [ "$given" -ne 1 ]; then
+    __scripter_args_error "exactly one of $shown must be given"
+  fi
 }
-# __scripter_args_at_most_one <shown list> <keys...>
-__scripter_args_at_most_one() {
-  local shown=$1
-  shift
-  __scripter_args_count_given "$@"
-  [ "$__scripter_args_n" -le 1 ] || __scripter_args_error "only one of $shown may be given"
-}
-__scripter_args_exactly_one() {
-  local shown=$1
-  shift
-  __scripter_args_count_given "$@"
-  [ "$__scripter_args_n" -eq 1 ] || __scripter_args_error "exactly one of $shown must be given"
-}
+
 # __scripter_args_requires <key> <shown> <required key> <required shown>
 __scripter_args_requires() {
   if __scripter_args_is_given "$1" && ! __scripter_args_is_given "$3"; then
