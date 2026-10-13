@@ -1,25 +1,27 @@
 { lib }:
 let
-  colors = [
-    "none"
-    "bold"
-    "dim"
-    "black"
-    "red"
-    "green"
-    "yellow"
-    "blue"
-    "magenta"
-    "cyan"
-    "white"
-    "gray"
-    "bright-red"
-    "bright-green"
-    "bright-yellow"
-    "bright-blue"
-    "bright-magenta"
-    "bright-cyan"
-  ];
+  colorCodes = {
+    none = "";
+    bold = "1";
+    dim = "2";
+    black = "30";
+    red = "31";
+    green = "32";
+    yellow = "33";
+    blue = "34";
+    magenta = "35";
+    cyan = "36";
+    white = "37";
+    gray = "90";
+    bright-red = "91";
+    bright-green = "92";
+    bright-yellow = "93";
+    bright-blue = "94";
+    bright-magenta = "95";
+    bright-cyan = "96";
+  };
+  colors = lib.attrNames colorCodes;
+  escapeCode = color: if colorCodes.${color} == "" then "\"\"" else "$'\\e[${colorCodes.${color}}m'";
   q = lib.escapeShellArg;
   inherit (import ../../lib/util.nix { inherit lib; }) readFiles;
 in
@@ -133,7 +135,7 @@ in
       __scripter_ui_kv_width=${toString cfg.kvWidth}
       __scripter_ui_yes_hint=${q yesHint}
       ${lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (role: color: "__scripter_ui_theme_${role}=${q color}") (
+        lib.mapAttrsToList (role: color: "__scripter_ui_theme_${role}=${escapeCode color}") (
           removeAttrs cfg.theme [ "_module" ]
         )
       )}

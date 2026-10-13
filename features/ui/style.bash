@@ -1,36 +1,8 @@
-__scripter_ui_sgr() {
-  case $1 in
-    bold) __scripter_ui_esc=$'\e[1m' ;;
-    dim) __scripter_ui_esc=$'\e[2m' ;;
-    black) __scripter_ui_esc=$'\e[30m' ;;
-    red) __scripter_ui_esc=$'\e[31m' ;;
-    green) __scripter_ui_esc=$'\e[32m' ;;
-    yellow) __scripter_ui_esc=$'\e[33m' ;;
-    blue) __scripter_ui_esc=$'\e[34m' ;;
-    magenta) __scripter_ui_esc=$'\e[35m' ;;
-    cyan) __scripter_ui_esc=$'\e[36m' ;;
-    white) __scripter_ui_esc=$'\e[37m' ;;
-    gray) __scripter_ui_esc=$'\e[90m' ;;
-    bright-red) __scripter_ui_esc=$'\e[91m' ;;
-    bright-green) __scripter_ui_esc=$'\e[92m' ;;
-    bright-yellow) __scripter_ui_esc=$'\e[93m' ;;
-    bright-blue) __scripter_ui_esc=$'\e[94m' ;;
-    bright-magenta) __scripter_ui_esc=$'\e[95m' ;;
-    bright-cyan) __scripter_ui_esc=$'\e[96m' ;;
-    *) __scripter_ui_esc="" ;;
-  esac
-}
-
 __scripter_ui_load_colors() {
-  local __scripter_role __scripter_theme_var
-  __scripter_c_reset=$'\e[0m'
-  __scripter_c_bold=$'\e[1m'
-  __scripter_c_dim=$'\e[2m'
-  for __scripter_role in debug info success warn error accent; do
-    __scripter_theme_var=__scripter_ui_theme_$__scripter_role
-    __scripter_ui_sgr "${!__scripter_theme_var}"
-    printf -v "__scripter_c_$__scripter_role" '%s' "$__scripter_ui_esc"
-  done
+  __scripter_c_reset=$'\e[0m' __scripter_c_bold=$'\e[1m' __scripter_c_dim=$'\e[2m'
+  __scripter_c_debug=$__scripter_ui_theme_debug __scripter_c_info=$__scripter_ui_theme_info
+  __scripter_c_success=$__scripter_ui_theme_success __scripter_c_warn=$__scripter_ui_theme_warn
+  __scripter_c_error=$__scripter_ui_theme_error __scripter_c_accent=$__scripter_ui_theme_accent
 }
 
 __scripter_ui_clear_colors() {
@@ -76,8 +48,6 @@ __scripter_ui_init() {
   __scripter_ui_renderer=plain
   ctx::renderer -v __scripter_ui_renderer
   __scripter_ui_indent=""
-  __scripter_ui_groups=()
-  __scripter_ui_group_ids=()
   __scripter_ui_seq=0
   __scripter_ui_cursor_hidden=""
   __scripter_ui_spin_pid=""
@@ -104,9 +74,6 @@ __scripter_ui_cleanup() {
   if [ -n "${__scripter_ui_cursor_hidden:-}" ]; then
     __scripter_ui_show_cursor
   fi
-  while [ "${#__scripter_ui_groups[@]}" -gt 0 ]; do
-    ui::group_end
-  done
 }
 
 __scripter_ui_level_rank() {
