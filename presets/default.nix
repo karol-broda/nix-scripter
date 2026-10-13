@@ -30,6 +30,10 @@ in
     bash.target = d "3.2";
   };
 
+  small = {
+    passes.treeShake.enable = d true;
+  };
+
   strict = {
     check.shellcheck.severity = d "style";
     check.shfmt.enable = d true;

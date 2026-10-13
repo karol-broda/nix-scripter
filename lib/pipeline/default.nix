@@ -47,11 +47,33 @@ let
       };
     };
 
+  treeShake = import ../passes/tree-shake.nix { inherit lib; };
+
+  shaken =
+    features:
+    if config.passes.treeShake.enable then
+      treeShake.shake {
+        inherit features;
+        inherit (config.passes.treeShake) keep;
+        roots = [
+          context.user.text
+        ]
+        ++ lib.optionals cli.enable (
+          [
+            cli.code.parser
+            cli.code.dispatch
+          ]
+          ++ map (b: b.text) cli.code.bodies
+        );
+      }
+    else
+      features;
+
   segments = context.backend.assemble {
     inherit config;
     inherit (dependencies) linkedPath startupCommands;
     inherit (context) user;
-    features = map featureCode context.features;
+    features = shaken (map featureCode context.features);
     args = if cli.enable then { inherit (cli) ir code; } else null;
   };
 
