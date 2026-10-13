@@ -46,6 +46,8 @@ __scripter_ensure_ci() {
   __scripter_detect_forced_ci || __scripter_detect_ci_from_env
 }
 
+# Optional -v <var>.
+# shellcheck disable=SC2120
 ctx::ci_provider() {
   __scripter_ret_var "$@"
   __scripter_ensure_ci

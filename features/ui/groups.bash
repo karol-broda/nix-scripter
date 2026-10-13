@@ -67,9 +67,20 @@ __scripter_ui_group_close() {
   esac
 }
 
+__scripter_ui_close_open_groups() {
+  while [ "${#__scripter_ui_groups[@]}" -gt 0 ]; do
+    ui::group_end
+  done
+}
+
 ui::group_begin() {
   local __scripter_nested=""
   __scripter_ui_init
+  if [ -z "${__scripter_ui_groups+x}" ]; then
+    __scripter_ui_groups=()
+    __scripter_ui_group_ids=()
+    on_exit __scripter_ui_close_open_groups
+  fi
   if [ "${#__scripter_ui_groups[@]}" -gt 0 ]; then __scripter_nested=1; fi
   __scripter_ui_groups+=("$*")
   __scripter_ui_group_open "$*" "$__scripter_nested"
@@ -78,6 +89,7 @@ ui::group_begin() {
 ui::group_end() {
   local __scripter_last __scripter_title __scripter_nested=""
   __scripter_ui_init
+  [ -n "${__scripter_ui_groups+x}" ] || return 0
   __scripter_last=$((${#__scripter_ui_groups[@]} - 1))
   [ "$__scripter_last" -ge 0 ] || return 0
   __scripter_title=${__scripter_ui_groups[__scripter_last]}

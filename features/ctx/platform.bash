@@ -1,3 +1,5 @@
+# Optional -v <var>.
+# shellcheck disable=SC2120
 ctx::os() {
   local __scripter_os
   __scripter_ret_var "$@"
@@ -13,6 +15,8 @@ ctx::os() {
   __scripter_ret "$__scripter_ret_to" "$__scripter_os"
 }
 
+# Optional -v <var>.
+# shellcheck disable=SC2120
 ctx::arch() {
   local __scripter_arch=${HOSTTYPE:-}
   __scripter_ret_var "$@"

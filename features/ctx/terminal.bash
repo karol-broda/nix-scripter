@@ -33,6 +33,8 @@ ctx::color() {
   [ -n "$__scripter_color" ]
 }
 
+# Optional -v <var>.
+# shellcheck disable=SC2120
 ctx::renderer() {
   local __scripter_r
   __scripter_ret_var "$@"

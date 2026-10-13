@@ -3,7 +3,7 @@ __scripter_ui_ask() {
 }
 
 __scripter_ui_read_line() {
-  IFS= read -r "$@" __scripter_ui_reply || __scripter_ui_reply=""
+  IFS= read -r __scripter_ui_reply || __scripter_ui_reply=""
 }
 
 __scripter_ui_take_var_option() {
@@ -80,7 +80,7 @@ ui::secret() {
   __scripter_ui_init
   ctx::is_interactive || die "secret needed: '$1', but not interactive"
   __scripter_ui_ask "$1"
-  __scripter_ui_read_line -s
+  IFS= read -rs __scripter_ui_reply || __scripter_ui_reply=""
   printf '\n' >&2
   __scripter_ret "$__scripter_var" "$__scripter_ui_reply"
 }
