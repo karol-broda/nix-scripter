@@ -21,7 +21,12 @@
         "aarch64-darwin"
       ];
 
-      scripter.defaults = scripter.lib.presets.recommended;
+      scripter.defaults = {
+        imports = with scripter.lib.presets; [
+          recommended
+          small
+        ];
+      };
 
       perSystem =
         { config, pkgs, ... }:

@@ -38,7 +38,10 @@ final: _prev: {
   };
 
   presets.team = {
-    imports = [ final.presets.recommended ];
+    imports = [
+      final.presets.recommended
+      final.presets.small
+    ];
     features.git.enable = lib.mkDefault true;
     features.ui.theme.accent = lib.mkDefault "magenta";
     args.globals.dryRun = lib.mkDefault true;

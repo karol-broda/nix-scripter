@@ -1,3 +1,5 @@
+# Optional -v <var>.
+# shellcheck disable=SC2120
 git::branch() {
   __scripter_ret_var "$@"
   __scripter_ret "$__scripter_ret_to" "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)"
@@ -7,6 +9,8 @@ git::is_clean() {
   [ -z "$(git status --porcelain 2>/dev/null)" ]
 }
 
+# Optional -v <var>.
+# shellcheck disable=SC2120
 git::remote_url() {
   __scripter_ret_var "$@"
   __scripter_ret "$__scripter_ret_to" "$(git remote get-url "$__example_git_remote" 2>/dev/null || true)"
