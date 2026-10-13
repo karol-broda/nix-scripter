@@ -15,6 +15,7 @@ lib.mergeAttrsList (
     ./args.nix
     ./standalone.nix
     ./compat.nix
+    ./tree-shake.nix
     ./errors.nix
     ./generate.nix
     ./discover.nix
