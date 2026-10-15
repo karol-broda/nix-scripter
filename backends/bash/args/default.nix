@@ -34,11 +34,8 @@ let
       ++ lib.optional (anyArgument (a: a.values != null)) "enum"
       ++ lib.optional ir.hasCommands "commands"
       ++ lib.optional (anyLevel (l: !l.isRoot && l.commands == [ ] && l.body == null)) "implementation"
-      ++ lib.optional (anyArgument (a: a.env != null)) "env"
-      ++ lib.optional (anyArgument (a: a.default != null && a.default != false)) "defaults"
-      ++ lib.optional (anyArgument (a: a.required)) "required"
+      ++ lib.optional (anyArgument (a: a.env != null && a.kind == "flag")) "env"
       ++ lib.optional (anyLevel (l: l.constraints != [ ])) "constraints"
-      ++ lib.optional (anyArgument argument.isGlobal) "globals"
     );
 
   # Subcommands that inherit the same options share one "Global options" section.

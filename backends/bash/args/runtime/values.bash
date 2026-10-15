@@ -18,33 +18,11 @@ __scripter_args_check() {
   fi
 }
 
-__scripter_args_is_given() {
-  local given="__scripter_ag_$1"
-  [ -n "${!given:-}" ]
-}
-
-__scripter_args_assign() {
-  if [ "$2" = list ]; then
-    eval "__scripter_al_$1+=(\"\$3\")"
-  else
-    printf -v "__scripter_av_$1" '%s' "$3"
-  fi
-}
-
-# __scripter_args_store <key> <scalar|list> <type> <pattern> <value> <shown> [allowed values...]
-__scripter_args_store() {
-  local key=$1 shape=$2 type=$3 pattern=$4 value=$5 shown=$6
-  shift 6
-  __scripter_args_check "$type" "$value" "$shown" "$pattern" "$@"
-  __scripter_args_assign "$key" "$shape" "$value"
-  printf -v "__scripter_ag_$key" '%s' 1
-}
-
 __scripter_args_set_flag() {
-  local key=$1 value=$3 current="__scripter_av_$1"
+  local current="__scripter_av_$1" value=$3
   if [ "$2" = count ]; then
     if [ -n "$value" ]; then value=$((${!current:-0} + 1)); else value=0; fi
   fi
-  __scripter_args_assign "$key" scalar "$value"
-  printf -v "__scripter_ag_$key" '%s' 1
+  printf -v "$current" '%s' "$value"
+  printf -v "__scripter_ag_$1" '%s' 1
 }

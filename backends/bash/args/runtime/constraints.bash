@@ -1,3 +1,8 @@
+__scripter_args_is_given() {
+  local given="__scripter_ag_$1"
+  [ -n "${!given:-}" ]
+}
+
 # __scripter_args_limit <le|eq> <shown list> <keys...>
 __scripter_args_limit() {
   local op=$1 shown=$2 key given=0
