@@ -82,8 +82,8 @@ ui::group_begin() {
     on_exit __scripter_ui_close_open_groups
   fi
   if [ "${#__scripter_ui_groups[@]}" -gt 0 ]; then __scripter_nested=1; fi
-  __scripter_ui_groups+=("$*")
   __scripter_ui_group_open "$*" "$__scripter_nested"
+  __scripter_ui_groups+=("$*")
 }
 
 ui::group_end() {

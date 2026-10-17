@@ -28,7 +28,7 @@ __scripter_ui_spin_report() {
     ui::success "$__scripter_msg $__scripter_c_dim($__scripter_duration)$__scripter_c_reset"
     return 0
   fi
-  ui::error "$__scripter_msg failed with exit code $__scripter_ui_rc $__scripter_c_dim($__scripter_duration)$__scripter_c_reset"
+  ui::error "$__scripter_msg $__scripter_c_dim(exit code $__scripter_ui_rc, $__scripter_duration)$__scripter_c_reset"
   if [ -n "$__scripter_ui_spin_log" ]; then
     sed "s/^/$__scripter_ui_indent  /" "$__scripter_ui_spin_log" >&2
   fi

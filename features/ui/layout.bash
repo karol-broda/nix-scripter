@@ -1,3 +1,15 @@
+# Headings after the first get a blank line above them, except in plain
+# logs and inside groups.
+__scripter_ui_heading_gap() {
+  local __scripter_depth=0
+  if [ -n "${__scripter_ui_groups+x}" ]; then __scripter_depth=${#__scripter_ui_groups[@]}; fi
+  if [ -n "${__scripter_ui_had_heading:-}" ] && [ "$__scripter_ui_renderer" != plain ] &&
+    [ "$__scripter_depth" -eq 0 ]; then
+    printf '\n' >&2
+  fi
+  __scripter_ui_had_heading=1
+}
+
 ui::header() {
   local __scripter_title="$*"
   __scripter_ui_init
@@ -6,6 +18,7 @@ ui::header() {
     printf '%s== %s ==\n' "$__scripter_ui_indent" "$__scripter_title" >&2
     return 0
   fi
+  __scripter_ui_heading_gap
   __scripter_ui_repeat "$__scripter_i_rule" "${#__scripter_title}"
   printf '%s%s%s%s%s\n%s%s%s%s\n' \
     "$__scripter_ui_indent" "$__scripter_c_bold" "$__scripter_c_accent" "$__scripter_title" "$__scripter_c_reset" \
@@ -18,6 +31,7 @@ ui::section() {
   if [ "$__scripter_ui_renderer" = plain ]; then
     printf '%s-- %s\n' "$__scripter_ui_indent" "$*" >&2
   else
+    __scripter_ui_heading_gap
     printf '%s%s%s %s%s\n' "$__scripter_ui_indent" "$__scripter_c_bold" "$__scripter_i_arrow" "$*" "$__scripter_c_reset" >&2
   fi
 }
