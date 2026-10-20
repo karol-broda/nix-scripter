@@ -52,6 +52,7 @@ in
     [ "$res" = "$(printf 'setup runs first\nstatus json=1 dry= cmd=status')" ] || fail "status: $res"
     res=$(${commandsScript}/bin/cmds db migrate)
     [ "$res" = "$(printf 'setup runs first\nmigrating 1 steps')" ] || fail "migrate: $res"
-    ${commandsScript}/bin/cmds db --help | grep -q "migrate  Run migrations" || fail "db help"
+    ${commandsScript}/bin/cmds db --help > db-help.txt
+    expect_contains db-help.txt "migrate  Run migrations"
   '';
 }

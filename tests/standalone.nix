@@ -23,7 +23,8 @@ in
   standalone = runTest "standalone" [ pkgs.jq ] ''
     f=${standaloneScript}/bin/portable
     ! grep -q /nix/store "$f" || fail "store path in standalone script"
-    head -1 "$f" | grep -qx '#!/usr/bin/env bash' || fail "wrong shebang"
+    IFS= read -r shebang < "$f"
+    [ "$shebang" = '#!/usr/bin/env bash' ] || fail "wrong shebang: $shebang"
     rc=0
     bash "$f" 2> missing.txt || rc=$?
     [ "$rc" -eq 127 ] || fail "expected exit 127, got $rc"
