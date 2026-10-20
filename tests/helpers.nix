@@ -20,4 +20,12 @@
       '';
 
   failsToEvaluate = drv: !(builtins.tryEval (builtins.seq drv.drvPath true)).success;
+
+  # Runs a command attached to a pseudo-terminal, on Linux and darwin alike.
+  inTerminal = pkgs.writeShellScript "in-terminal" ''
+    exec ${pkgs.python3.interpreter} -c '
+    import os, pty, sys
+    sys.exit(os.waitstatus_to_exitcode(pty.spawn(sys.argv[1:])))
+    ' "$@"
+  '';
 }

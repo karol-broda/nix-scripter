@@ -3,6 +3,7 @@
   lib,
   scripter,
   runTest,
+  inTerminal,
   ...
 }:
 let
@@ -48,7 +49,7 @@ in
   tree-shake-args = argsDemo.checks.args;
   tree-shake-commands = commands.checks.args;
 
-  tree-shake = runTest "tree-shake" [ pkgs.util-linux ] ''
+  tree-shake = runTest "tree-shake" [ ] ''
     [ "$(wc -l < ${small}/bin/ui-demo)" -lt "$(wc -l < ${full}/bin/ui-demo)" ] || fail "nothing was removed"
     ! grep -q '^ui::choose()' ${small}/bin/ui-demo || fail "unused ui::choose was kept"
     grep -q '^ui::spin()' ${small}/bin/ui-demo || fail "used ui::spin was removed"
@@ -60,7 +61,7 @@ in
       diff <(${withoutTimings} full.err | grep -v section_) <(${withoutTimings} small.err | grep -v section_) ||
         fail "ui output differs ($env)"
     done
-    script -qec ${small}/bin/ui-demo /dev/null > tty.txt
+    ${inTerminal} ${small}/bin/ui-demo > tty.txt
     expect_contains tty.txt "an info"
 
     rc=0

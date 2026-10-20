@@ -3,6 +3,7 @@
   lib,
   scripter,
   runTest,
+  inTerminal,
   ...
 }:
 let
@@ -56,11 +57,11 @@ in
     SCRIPTER_CI=none GITHUB_ACTIONS=true ${uiScript}/bin/ui-demo 2> forced.txt > /dev/null
     expect_contains forced.txt "[warn] a warning"
   '';
-  ui-fancy = runTest "ui-fancy" [ pkgs.util-linux ] ''
-    script -qec "${uiScript}/bin/ui-demo" /dev/null > tty.txt
+  ui-fancy = runTest "ui-fancy" [ ] ''
+    ${inTerminal} ${uiScript}/bin/ui-demo > tty.txt
     expect_contains tty.txt "$(printf '\e[1m')"
     expect_contains tty.txt "an info"
-    SCRIPTER_ICONS=unicode script -qec "${uiScript}/bin/ui-demo" /dev/null > unicode.txt
+    SCRIPTER_ICONS=unicode ${inTerminal} ${uiScript}/bin/ui-demo > unicode.txt
     expect_contains unicode.txt "✔"
   '';
 }
