@@ -15,14 +15,18 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ bison ];
 
+  # Tests never edit lines interactively. The bundled readline and termcap
+  # also define the same globals, which modern linkers reject.
   configureFlags = [
     "--without-bash-malloc"
     "--disable-nls"
+    "--disable-readline"
   ];
 
-  # Pre-C99 sources; modern compilers reject them by default.
+  # The sources predate C99 and modern compilers reject them by default.
   env.NIX_CFLAGS_COMPILE = toString [
     "-std=gnu89"
+    "-fcommon"
     "-Wno-error=implicit-function-declaration"
     "-Wno-error=implicit-int"
     "-Wno-error=incompatible-pointer-types"
